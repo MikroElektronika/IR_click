@@ -1,0 +1,84 @@
+{*
+Example for IR Click
+
+    Date          : Nov 2018.
+    Author        : Nenad Filipovic
+
+Test configuration MSP :
+    
+    MCU              : MSP432
+    Dev. Board       : Clicker 2 for MSP432
+    ARM Compiler ver : v6.0.0.0
+
+---
+
+Description :
+
+The application is composed of three sections :
+
+- System Initialization - Initializes GPIO, UART and LOG structures, 
+     set INT pin as input and PWM pin sa output.
+- Application Initialization - Initialization driver enable's - UART and start write log.
+- Application Task - (code snippet) This is a example which demonstrates the use of IR Click board.
+     IR Click communicates with register via UART protocol by write or read and check for new byte received.
+     The example checks if new data byte have received in RF buffer ( ready for reading )
+     and if ready than reads one byte from RX buffer.
+     In second case aplication task writes ( send ) data via UART.
+     Results are being sent to the Usart Terminal where you can track their changes.
+     
+
+*}
+program Click_IR_MSP;
+
+uses Click_IR_types, Click_IR_config;
+
+const
+    demoData : array[4] of uint8_t = (0x12, 0x34, 0x56, 0x0F); 
+    
+procedure systemInit(); 
+begin
+
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_AN_PIN, _GPIO_INPUT); 
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_PWM_PIN, _GPIO_OUTPUT); 
+    mikrobus_uartInit(_MIKROBUS1, @_IR_UART_CFG[0]); 
+    mikrobus_logInit(_MIKROBUS2, 9600); 
+    Delay_ms(100); 
+
+end;
+
+procedure applicationInit(); 
+begin
+
+    ir_uartDriverInit(T_IR_P(@_MIKROBUS1_GPIO), T_IR_P(@_MIKROBUS1_UART)); 
+    mikrobus_logWrite('------------------', _LOG_LINE); 
+    mikrobus_logWrite('     IR Click     ', _LOG_LINE); 
+    mikrobus_logWrite('------------------', _LOG_LINE); 
+    mikrobus_logWrite('     RECEIVER     ', _LOG_LINE); 
+    mikrobus_logWrite('------------------', _LOG_LINE); 
+
+end;
+
+procedure applicationTask(); 
+var
+    receivedData : char;
+    counter : uint8_t;
+begin
+
+    if (ir_checkByteReady()) then 
+    begin
+        receivedData := ir_readByte(); 
+        mikrobus_logWrite(@receivedData, _LOG_BYTE); 
+    end; 
+
+end;
+
+begin
+
+    systemInit(); 
+    applicationInit(); 
+    while (1) do 
+    begin 
+        applicationTask(); 
+    end;
+
+end.

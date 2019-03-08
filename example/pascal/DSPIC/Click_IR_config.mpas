@@ -1,0 +1,8 @@
+unit Click_IR_config;
+
+uses Click_IR_types;
+
+const
+    _IR_UART_CFG : array[1] of uint32_t = (9600); 
+    
+end.
